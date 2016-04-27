@@ -22,16 +22,15 @@ type socketStatus struct {
 	local  socketAddr
 	remote socketAddr
 	//status ConnectionStatus
-	uid    int
-	inode  uint64
-	line   string
+	uid   int
+	inode uint64
+	line  string
 }
-
 
 type ConnectionStatus int
 
 const (
-	ESTABLISHED 	ConnectionStatus = iota
+	ESTABLISHED ConnectionStatus = iota
 	SYN_SENT
 	SYN_RECV
 	FIN_WAIT1
@@ -44,7 +43,7 @@ const (
 	CLOSING
 )
 
-func (c ConnectionStatus) String() (string) {
+func (c ConnectionStatus) String() string {
 	switch c {
 	case ESTABLISHED:
 		return "ESTABLISHED"
@@ -54,8 +53,8 @@ func (c ConnectionStatus) String() (string) {
 		return "SYN_RECV"
 	case FIN_WAIT1:
 		return "FIN_WAIT1"
-	case	FIN_WAIT2:
-		return  "FIN_WAIT2"
+	case FIN_WAIT2:
+		return "FIN_WAIT2"
 	case TIME_WAIT:
 		return "TIME_WAIT"
 	case CLOSE:
@@ -72,7 +71,6 @@ func (c ConnectionStatus) String() (string) {
 		return "Invalid Connection Status"
 	}
 }
-
 
 func (ss *socketStatus) String() string {
 	return fmt.Sprintf("%s -> %s uid=%d inode=%d", ss.local, ss.remote, ss.uid, ss.inode)
@@ -117,11 +115,11 @@ func (ss *socketStatus) parseLine(line string) error {
 		return err
 	}
 	/*
-	st64, err := strconv.ParseInt(fmt.Sprintf("0x%s", fs[3]), 0, 32)
-	if err != nil {
-		return fmt.Errorf("Error parsing ConnectionStatus: %s", err)
-	}
-	ss.status = ConnectionStatus(st64)
+		st64, err := strconv.ParseInt(fmt.Sprintf("0x%s", fs[3]), 0, 32)
+		if err != nil {
+			return fmt.Errorf("Error parsing ConnectionStatus: %s", err)
+		}
+		ss.status = ConnectionStatus(st64)
 	*/
 	if err := ss.remote.parse(fs[2]); err != nil {
 		return err

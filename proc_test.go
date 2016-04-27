@@ -110,6 +110,6 @@ func TestLookupUNIXSocketProcess(t *testing.T) {
 	fmt.Printf("remote addr %s", fields)
 	fields = strings.Split(conn.LocalAddr().String(), ":")
 	fmt.Printf("local addr %s", fields)
-	//procInfo := LookupUNIXSocketProcess(uint16(srcP), dstIP, uint16(dstP))
-	//fmt.Printf("info %s\n", procInfo)
+	procInfo := LookupUNIXSocketProcess(address)
+	fmt.Printf("info %s\n", procInfo)
 }

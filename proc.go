@@ -7,8 +7,10 @@ import (
 	"github.com/op/go-logging"
 	"io/ioutil"
 	"net"
+	"os"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 var log = logging.MustGetLogger("go-procsockets")
@@ -38,6 +40,17 @@ func LookupTCPSocketProcess(srcPort uint16, dstAddr net.IP, dstPort uint16) *Inf
 	return pcache.lookup(ss.inode)
 }
 
+// LookupUNIXSocketProcess searches for a UNIX domain socket with a given filename
+func LookupUNIXSocketProcess(socketFile string) *Info {
+	f, err := os.Open(socketFile)
+	if err != nil {
+		panic(err)
+	}
+	fileInfo, err := f.Stat()
+	inode := fileInfo.Sys().(*syscall.Stat_t).Ino
+	return pcache.lookup(inode)
+}
+
 type connectionInfo struct {
 	pinfo  *Info
 	local  *socketAddr
@@ -49,6 +62,7 @@ func (ci *connectionInfo) String() string {
 }
 
 func (sa *socketAddr) parse(s string) error {
+	fmt.Printf("parse %s\n")
 	ipPort := strings.Split(s, ":")
 	if len(ipPort) != 2 {
 		return fmt.Errorf("badly formatted socket address field: %s", s)
@@ -109,7 +123,7 @@ func resolveProcinfo(conns []*connectionInfo) {
 		ss := new(socketStatus)
 		if err := ss.parseLine(line); err != nil {
 			log.Warning("Unable to parse line [%s]: %v", line, err)
-		}/* else {
+		} /* else {
 			/*
 				pid := findPidForInode(ss.inode)
 				if pid > 0 {
@@ -117,7 +131,7 @@ func resolveProcinfo(conns []*connectionInfo) {
 					fmt.Println("Socket", ss)
 					sockets = append(sockets, ss)
 				}
-			
+
 		}*/
 	}
 	for _, ci := range conns {
