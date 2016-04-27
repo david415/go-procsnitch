@@ -42,12 +42,13 @@ func LookupTCPSocketProcess(srcPort uint16, dstAddr net.IP, dstPort uint16) *Inf
 
 // LookupUNIXSocketProcess searches for a UNIX domain socket with a given filename
 func LookupUNIXSocketProcess(socketFile string) *Info {
-	f, err := os.Open(socketFile)
+	fmt.Printf("LookupUNIXSocketProcess %s\n", socketFile)
+	fileInfo, err := os.Stat(socketFile)
 	if err != nil {
 		panic(err)
 	}
-	fileInfo, err := f.Stat()
 	inode := fileInfo.Sys().(*syscall.Stat_t).Ino
+	fmt.Printf("inode %s\n", inode)
 	return pcache.lookup(inode)
 }
 

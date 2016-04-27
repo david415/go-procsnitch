@@ -88,7 +88,7 @@ func TestLookupUNIXSocketProcess(t *testing.T) {
 	// listen for a connection
 	var wg sync.WaitGroup
 	network := "unix"
-	address := "testing_socket"
+	address := "./testing_socket"
 	l := NewDummyListener(network, address, &wg)
 	go l.AcceptLoop()
 	wg.Wait()
@@ -107,9 +107,9 @@ func TestLookupUNIXSocketProcess(t *testing.T) {
 
 	// prepare to do proc lookup
 	fields := strings.Split(conn.RemoteAddr().String(), ":")
-	fmt.Printf("remote addr %s", fields)
+	fmt.Printf("remote addr %s\n", fields)
 	fields = strings.Split(conn.LocalAddr().String(), ":")
-	fmt.Printf("local addr %s", fields)
+	fmt.Printf("local addr %s\n", fields)
 	procInfo := LookupUNIXSocketProcess(address)
-	fmt.Printf("info %s\n", procInfo)
+	fmt.Printf("proc info %s\n", procInfo)
 }
