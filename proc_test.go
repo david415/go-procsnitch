@@ -45,23 +45,6 @@ func (d *DummyListener) SessionWorker(conn net.Conn) {
 	}
 }
 
-type DummyDialer struct {
-	network string
-	address string
-}
-
-func NewDummyDialer(network, address string) *DummyDialer {
-	d := DummyDialer{
-		network: network,
-		address: address,
-	}
-	return &d
-}
-
-func (d *DummyDialer) Dial() (net.Conn, error) {
-	return net.Dial(d.network, d.address)
-}
-
 func TestLookupTCPSocketProcess(t *testing.T) {
 	// listen for a connection
 	network := "tcp"
@@ -70,8 +53,7 @@ func TestLookupTCPSocketProcess(t *testing.T) {
 	go l.AcceptLoop()
 
 	// dial a connection
-	d := NewDummyDialer(network, address)
-	conn, err := d.Dial()
+	conn, err := net.Dial(network, address)
 	if err != nil {
 		panic(err)
 	}
