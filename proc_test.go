@@ -3,31 +3,38 @@ package procsnitch
 import (
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
 type DummyListener struct {
-	network string
-	address string
+	network   string
+	address   string
+	waitGroup *sync.WaitGroup
 }
 
-func NewDummyListener(network, address string) *DummyListener {
+func NewDummyListener(network, address string, wg *sync.WaitGroup) *DummyListener {
 	l := DummyListener{
-		network: network,
-		address: address,
+		network:   network,
+		address:   address,
+		waitGroup: wg,
 	}
 	return &l
 }
 
 func (l *DummyListener) AcceptLoop() {
+	l.waitGroup.Add(1)
 	listener, err := net.Listen(l.network, l.address)
 	if err != nil {
 		panic(err)
 	}
 	defer listener.Close()
+
+	l.waitGroup.Done()
 
 	for {
 		conn, err := listener.Accept()
@@ -39,18 +46,20 @@ func (l *DummyListener) AcceptLoop() {
 	}
 }
 
-func (d *DummyListener) SessionWorker(conn net.Conn) {
+func (l *DummyListener) SessionWorker(conn net.Conn) {
 	for {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 60)
 	}
 }
 
 func TestLookupTCPSocketProcess(t *testing.T) {
 	// listen for a connection
+	var wg sync.WaitGroup
 	network := "tcp"
 	address := "127.0.0.1:6655"
-	l := NewDummyListener(network, address)
+	l := NewDummyListener(network, address, &wg)
 	go l.AcceptLoop()
+	wg.Wait()
 
 	// dial a connection
 	conn, err := net.Dial(network, address)
@@ -73,4 +82,34 @@ func TestLookupTCPSocketProcess(t *testing.T) {
 
 	procInfo := LookupTCPSocketProcess(uint16(srcP), dstIP, uint16(dstP))
 	fmt.Printf("info %s\n", procInfo)
+}
+
+func TestLookupUNIXSocketProcess(t *testing.T) {
+	// listen for a connection
+	var wg sync.WaitGroup
+	network := "unix"
+	address := "testing_socket"
+	l := NewDummyListener(network, address, &wg)
+	go l.AcceptLoop()
+	wg.Wait()
+
+	// XXX fix me
+	time.Sleep(time.Second * 1)
+
+	// dial a connection
+	conn, err := net.Dial(network, address)
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(address)
+
+	conn.Write([]byte("hello"))
+
+	// prepare to do proc lookup
+	fields := strings.Split(conn.RemoteAddr().String(), ":")
+	fmt.Printf("remote addr %s", fields)
+	fields = strings.Split(conn.LocalAddr().String(), ":")
+	fmt.Printf("local addr %s", fields)
+	//procInfo := LookupUNIXSocketProcess(uint16(srcP), dstIP, uint16(dstP))
+	//fmt.Printf("info %s\n", procInfo)
 }
