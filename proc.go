@@ -7,10 +7,8 @@ import (
 	"github.com/op/go-logging"
 	"io/ioutil"
 	"net"
-	"os"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 var log = logging.MustGetLogger("go-procsockets")
@@ -42,14 +40,11 @@ func LookupTCPSocketProcess(srcPort uint16, dstAddr net.IP, dstPort uint16) *Inf
 
 // LookupUNIXSocketProcess searches for a UNIX domain socket with a given filename
 func LookupUNIXSocketProcess(socketFile string) *Info {
-	fmt.Printf("LookupUNIXSocketProcess %s\n", socketFile)
-	fileInfo, err := os.Stat(socketFile)
-	if err != nil {
-		panic(err)
+	ss := findUNIXSocket(socketFile)
+	if ss == nil {
+		return nil
 	}
-	inode := fileInfo.Sys().(*syscall.Stat_t).Ino
-	fmt.Printf("inode %s\n", inode)
-	return pcache.lookup(inode)
+	return pcache.lookup(ss.inode)
 }
 
 type connectionInfo struct {
@@ -63,7 +58,6 @@ func (ci *connectionInfo) String() string {
 }
 
 func (sa *socketAddr) parse(s string) error {
-	fmt.Printf("parse %s\n")
 	ipPort := strings.Split(s, ":")
 	if len(ipPort) != 2 {
 		return fmt.Errorf("badly formatted socket address field: %s", s)

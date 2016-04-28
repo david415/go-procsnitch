@@ -102,14 +102,11 @@ func TestLookupUNIXSocketProcess(t *testing.T) {
 		panic(err)
 	}
 	defer os.Remove(address)
-
 	conn.Write([]byte("hello"))
-
-	// prepare to do proc lookup
-	fields := strings.Split(conn.RemoteAddr().String(), ":")
-	fmt.Printf("remote addr %s\n", fields)
-	fields = strings.Split(conn.LocalAddr().String(), ":")
-	fmt.Printf("local addr %s\n", fields)
 	procInfo := LookupUNIXSocketProcess(address)
-	fmt.Printf("proc info %s\n", procInfo)
+	if procInfo == nil {
+		t.Error("failured to acquire proc info for unix domain socket")
+		t.Fail()
+	}
+	fmt.Println("Acquired proc info for UNIX domain socket!", procInfo)
 }

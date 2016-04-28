@@ -25,6 +25,7 @@ type socketStatus struct {
 	uid   int
 	inode uint64
 	line  string
+	path  string
 }
 
 type ConnectionStatus int
@@ -88,6 +89,25 @@ func findTCPSocket(srcPort uint16, dstAddr net.IP, dstPort uint16) *socketStatus
 	})
 }
 
+func findUNIXSocket(socketFile string) *socketStatus {
+	var ss socketStatus
+	proto := "unix"
+	for _, line := range getSocketLines(proto) {
+		if len(line) == 0 {
+			continue
+		}
+		if err := ss.parseUnixProcLine(line); err != nil {
+			log.Warning("Unable to parse line from /proc/net/%s [%s]: %v", proto, line, err)
+			continue
+		}
+		if ss.path == socketFile {
+			ss.line = line
+			return &ss
+		}
+	}
+	return nil
+}
+
 func findSocket(proto string, matcher func(socketStatus) bool) *socketStatus {
 	var ss socketStatus
 	for _, line := range getSocketLines(proto) {
@@ -103,6 +123,21 @@ func findSocket(proto string, matcher func(socketStatus) bool) *socketStatus {
 			return &ss
 		}
 	}
+	return nil
+}
+
+// parseUnixProcLine parses lines in /proc/net/unix
+func (ss *socketStatus) parseUnixProcLine(line string) error {
+	var err error
+	fs := strings.Fields(line)
+	if len(fs) != 8 {
+		return errors.New("number of fields don't match parser")
+	}
+	ss.inode, err = strconv.ParseUint(fs[6], 10, 64)
+	if err != nil {
+		return err
+	}
+	ss.path = fs[7]
 	return nil
 }
 
